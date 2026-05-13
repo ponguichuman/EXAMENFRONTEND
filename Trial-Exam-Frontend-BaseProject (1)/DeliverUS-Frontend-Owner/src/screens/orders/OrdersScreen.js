@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState } from 'react'
-import { StyleSheet, View, FlatList, ImageBackground, Image, Pressable } from 'react-native'
+import { StyleSheet, View, FlatList, ImageBackground, Image, Pressable, ScrollView } from 'react-native'
 import { showMessage } from 'react-native-flash-message'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { getDetail, getRestaurantAnalytics, getRestaurantOrders } from '../../api/RestaurantEndpoints'
@@ -15,12 +15,28 @@ import inProcessOrderImage from '../../../assets/order_status_in_process.png'
 import sentOrderImage from '../../../assets/order_status_sent.png'
 import deliveredOrderImage from '../../../assets/order_status_delivered.png'
 import ImageCard from '../../components/ImageCard'
+import DropDownPicker from 'react-native-dropdown-picker'
 
 export default function OrdersScreen ({ navigation, route }) {
   const [restaurant, setRestaurant] = useState({})
   const [orders, setOrders] = useState([])
   const [analytics, setAnalytics] = useState(null)
+  const [selectedStatus, setSelectedStatus] = useState('all')
+  const [openStatus, setOpenStatus] = useState(false)
 
+  const filteredOrders =
+    selectedStatus === 'all'
+      ? orders
+      : orders.filter(order => order.status === selectedStatus)
+
+  const [statusItems, setStatusItems] = useState([
+    { label: 'All', value: 'all' },
+    { label: 'Pending', value: 'pending' },
+    { label: 'In process', value: 'in process' },
+    { label: 'Sent', value: 'sent' },
+    { label: 'Delivered', value: 'delivered' }
+
+  ])
   useEffect(() => {
     fetchRestaurantDetail()
     fetchRestaurantAnalytics()
@@ -122,8 +138,16 @@ export default function OrdersScreen ({ navigation, route }) {
         </View>
     )
   }
+
+  const totalAmount = filteredOrders.reduce((total, order) => {
+    return total + order.price
+  }, 0)
+
+  const totalOrders = filteredOrders.length
+
   const renderHeader = () => {
     return (
+
       <View>
         <ImageBackground source={(restaurant?.heroImage) ? { uri: API_BASE_URL + '/' + restaurant.heroImage, cache: 'force-cache' } : undefined} style={styles.imageBackground}>
           <View style={styles.restaurantHeaderContainer}>
@@ -134,6 +158,38 @@ export default function OrdersScreen ({ navigation, route }) {
           </View>
         </ImageBackground>
         {renderAnalytics()}
+        <DropDownPicker
+          open={openStatus}
+          value={selectedStatus}
+          items={statusItems}
+          setOpen={setOpenStatus}
+          setValue={setSelectedStatus}
+          setItems={setStatusItems}
+          placeholder='Filter by status'
+          containerStyle={{ height: 40, margin: 15, zIndex: 1000 }}
+          style={{ backgroundColor: GlobalStyles.brandBackground }}
+          dropDownStyle={{ backgroundColor: '#fafafa' }}
+        />
+         <View style={styles.analyticsContainer}>
+          <View style={styles.analyticsRow}>
+            <View style={styles.analyticsCell}>
+              <TextRegular textStyle={styles.text}>
+                Total orders:
+              </TextRegular>
+              <TextSemiBold textStyle={styles.text}>
+                {totalOrders}
+              </TextSemiBold>
+            </View>
+            <View style={styles.analyticsCell}>
+              <TextRegular textStyle={styles.text}>
+                Total amount
+              </TextRegular>
+              <TextSemiBold textStyle={styles.text}>
+                {totalAmount.toFixed(2)}€
+              </TextSemiBold>
+            </View>
+          </View>
+        </View>
       </View>
     )
   }
@@ -231,7 +287,7 @@ export default function OrdersScreen ({ navigation, route }) {
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmptyOrdersList}
         style={styles.container}
-        data={orders}
+        data={filteredOrders}
         renderItem={renderOrder}
         keyExtractor={item => item.id.toString()}
       />
