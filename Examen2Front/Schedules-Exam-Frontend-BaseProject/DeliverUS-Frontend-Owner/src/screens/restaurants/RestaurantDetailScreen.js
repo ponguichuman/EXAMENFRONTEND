@@ -88,16 +88,16 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
             color={item.schedule ? GlobalStyles.brandSecondary : GlobalStyles.brandPrimary}
           />
           {item.schedule
-          ? (
+            ? (
             <TextRegular textStyle= {styles.scheduledText}>
               {item.scheduled.startTime} - {item.scheduled.endTime}
-            </TextRegular>
-          )
-        : (
+              </TextRegular>
+              )
+            : (
           <TextRegular textStyle={styles.scheduledText}>
             Not scheduled
           </TextRegular>
-        )}
+              )}
         </View>
         {!item.availability &&
           <TextRegular textStyle={styles.availability }>Not available</TextRegular>

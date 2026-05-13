@@ -32,7 +32,7 @@ export default function RestaurantSchedulesScreen ({ navigation, route }) {
         imageUri={scheduleIcon}
         title={item.name}
       >
-        <View style={style.scheduleInfoContainer}>
+        <View style={styles.scheduleInfoContainer}>
           <View style={styles.scheduleRow}>
             <TextSemiBold> Start Time: </TextSemiBold>
             <TextRegular textStyle={styles.startTime}>
@@ -72,10 +72,22 @@ export default function RestaurantSchedulesScreen ({ navigation, route }) {
           </View>
           <View>
             <Pressable
-              onPress={() => setScheduleToBeDeleted(item)}
-              >
-                <MaterialCommunityIcons name='delete' size={20} />
-              </Pressable>
+            onPress={() => { setScheduleToBeDeleted(item) && navigation.navigate('RestaurantDetailScreen', { id: route.params.id }) }}
+            style={({ pressed }) => [
+              {
+                backgroundColor: pressed
+                  ? GlobalStyles.brandPrimaryTap
+                  : GlobalStyles.brandPrimary
+              },
+              styles.actionButton
+            ]}>
+          <View style={[{ flex: 1, flexDirection: 'row', justifyContent: 'center' }]}>
+            <MaterialCommunityIcons name='delete' color={'white'} size={20}/>
+            <TextRegular textStyle={styles.text}>
+              Delete
+            </TextRegular>
+          </View>
+        </Pressable>
           </View>
         </View>
         { /* TODO: mostrar los datos del horario */}
@@ -133,17 +145,69 @@ export default function RestaurantSchedulesScreen ({ navigation, route }) {
   }
 
   const remove = async (schedule) => {
+    try {
+      await remove(schedule.id)
+      await fetchSchedules()
+      setScheduleToBeDeleted(null)
+      showMessage({
+        message: `Schedule ${schedule.name} succesfully removed`,
+        type: 'success',
+        style: GlobalStyles.flashStyle,
+        titleStyle: GlobalStyles.flashTextStyle
+      })
+    } catch (error) {
+      console.log(error)
+      setScheduleToBeDeleted(null)
+      showMessage({
+        message: `Product ${schedule.name} could not be removed.`,
+        type: 'error',
+        style: GlobalStyles.flashStyle,
+        titleStyle: GlobalStyles.flashTextStyle
+      })
+    }
   }
 
+  /*
+ const removeScheduleAndNavigate = async (schedule) => {
+  try {
+    await removeSchedule(route.params.id, schedule.id)
+
+    showMessage({
+      message: 'Schedule successfully removed',
+      type: 'success',
+      style: GlobalStyles.flashStyle,
+      titleStyle: GlobalStyles.flashTextStyle
+    })
+
+    navigation.navigate('RestaurantDetailScreen', { id: route.params.id, dirty: true })
+  } catch (error) {
+    showMessage({
+      message: `Schedule could not be removed. ${error}`,
+      type: 'error',
+      style: GlobalStyles.flashStyle,
+      titleStyle: GlobalStyles.flashTextStyle
+    })
+  }
+}
+  */
+
   return (
-    <FlatList
-      style={styles.container}
-      data={schedules}
-      renderItem={renderSchedule}
-      keyExtractor={item => item.id.toString()}
-      ListHeaderComponent={renderHeader}
-      ListEmptyComponent={renderEmptySchedulesList}
-    />
+    <View>
+      <FlatList
+        style={styles.container}
+        data={schedules}
+        renderItem={renderSchedule}
+        keyExtractor={item => item.id.toString()}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={renderEmptySchedulesList}
+      />
+      <DeleteModal
+          isVisible={scheduleToBeDeleted !== null}
+          onCancel={() => setScheduleToBeDeleted(null)}
+          onConfirm={() => remove(scheduleToBeDeleted)}>
+            <TextRegular>If the product belong to some order, it cannot be deleted.</TextRegular>
+        </DeleteModal>
+    </View>
   )
 }
 
